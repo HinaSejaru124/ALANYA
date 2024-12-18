@@ -13,7 +13,11 @@ import java.net.Socket;
 public class FileReceiveThread extends Thread
 {
     private Socket socket;
-    private boolean canReceivedFile = false;
+
+    public FileReceiveThread(Socket socket)
+    {
+        this.socket = socket;
+    }
 
     @Override
     public void run()
@@ -48,24 +52,20 @@ public class FileReceiveThread extends Thread
 
             // reception of data
             long yetReceivedDataSize = 0;
-            byte[] buffer = new byte[4096];
+            byte[] buffer = new byte[8192];
             int dataRead;
 
-            while ( (dataRead = dis.read(buffer)) != -1)
+            while (yetReceivedDataSize < fileSize && (dataRead = dis.read(buffer)) != -1)
             {
-                yetReceivedDataSize += dataRead;
-                if (yetReceivedDataSize >= fileSize)
-                    break;
                 fos.write(buffer, 0, dataRead);
+                yetReceivedDataSize += dataRead;
             }
-
-            // the end
+            System.out.println("Reception of the file " + fullFileName + " succeeded");
             fos.close();
-            dis.close();
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            System.out.println(e.getMessage());
         }
     }
 

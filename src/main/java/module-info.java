@@ -3,5 +3,4 @@ module alanya {
     requires javafx.fxml;
 
     opens alanya to javafx.fxml;
-    exports alanya;
 }
