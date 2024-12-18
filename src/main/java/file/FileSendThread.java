@@ -34,6 +34,7 @@ public class FileSendThread extends Thread
     }
 
     public void sendFile(String filePath)
+    {
         try
         {
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
