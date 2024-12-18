@@ -18,14 +18,10 @@ public class FileSendThread extends Thread
     @Override
     public void run()
     {
-        //Thread reste en attente d'un fichier envoyé
-        while (!Thread.currentThread().isInterrupted() && socket.isConnected())
+        if(sendFileFlag)
         {
-            if(sendFileFlag)
-            {
-                sendFile(filePath) ; // envoie du fichier
-                sendFileFlag = false ;
-            }
+            sendFile(filePath) ; // envoie du fichier
+            sendFileFlag = false ;
         }
     }
 
