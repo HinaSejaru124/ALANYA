@@ -13,15 +13,9 @@ public class Server extends ChatApp {
     public void start(Stage primaryStage) {
         try (ServerSocket serverSocket = new ServerSocket(PORT))
         {
-            super.start(primaryStage);
-            // VBox root = new VBox(new Label("En attente de connexion..."));
-            // root.setSpacing(10);
-            // root.setStyle("-fx-alignment: center;");
-    
-            // PageManager.showPage(root);
-            // primaryStage.show();
-
             this.user = serverSocket.accept();
+            this.username = "Serveur";
+            super.start(primaryStage);
         } catch (IOException e) {
             showError("Impossible de lancer le serveur: " + e.getMessage());
         }

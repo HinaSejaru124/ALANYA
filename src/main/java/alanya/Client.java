@@ -17,6 +17,7 @@ public class Client extends ChatApp
         try
         {
             this.user = new Socket(SERVER, PORT);
+            this.username = "Client";
             super.start(primaryStage);
         } 
         catch (IOException e)
