@@ -7,8 +7,7 @@ import javafx.stage.Stage;
 
 public class Client extends ChatApp
 {
-    private static final String SERVER = "localhost";
-    private static final int PORT = 7000;
+    private static final String SERVER = "localhost"; 
     
     @SuppressWarnings("exports")
     @Override
@@ -16,7 +15,8 @@ public class Client extends ChatApp
     {
         try
         {
-            this.user = new Socket(SERVER, PORT);
+            this.messageSocket = new Socket(SERVER, MESSAGE_PORT);
+            this.fileSocket = new Socket(SERVER, FILE_PORT);
             this.username = "Client";
             super.start(primaryStage);
         } 

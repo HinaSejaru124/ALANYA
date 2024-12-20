@@ -5,15 +5,16 @@ import java.net.ServerSocket;
 
 import javafx.stage.Stage;
 
-public class Server extends ChatApp {
-    private static final int PORT = 7000;   
+public class Server extends ChatApp {  
 
     @SuppressWarnings("exports")
     @Override
     public void start(Stage primaryStage) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT))
+        try (ServerSocket messageServerSocket = new ServerSocket(MESSAGE_PORT);
+            ServerSocket filServerSocket = new ServerSocket(FILE_PORT))
         {
-            this.user = serverSocket.accept();
+            this.messageSocket = messageServerSocket.accept();
+            this.fileSocket = filServerSocket.accept();
             this.username = "Serveur";
             super.start(primaryStage);
         } catch (IOException e) {

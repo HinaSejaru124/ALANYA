@@ -29,31 +29,36 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import message.MessageReadThread;
+import message.MessageWriteThread;
 
-public abstract class ChatApp extends Application {
-
+public abstract class ChatApp extends Application
+{
     private static final double ICON_SIZE = 24; // Taille des icônes
     private VBox messagesBox;
     private TextField inputField;
 
     private String filePath;
-
-    protected Socket user;
     protected String username;
+
+    protected Socket messageSocket;
+    protected Socket fileSocket;
+
+    protected  static final int MESSAGE_PORT = 7000;
+    protected  static final int FILE_PORT = 7001;
 
     @SuppressWarnings("exports")
     @Override
     public void start(Stage primaryStage) throws IOException
     {
         // Threads de communication
-        // MessageWriteThread messageSend = new MessageWriteThread(user);
-        // messageSend.start();
-        // MessageReadThread messageReceive = new MessageReadThread(user);
-        // messageReceive.start();
+        MessageWriteThread messageSend = new MessageWriteThread(messageSocket);
+        messageSend.start();
+        new MessageReadThread(messageSocket, this).start();
             
-        FileSendThread fileSend = new FileSendThread(user);
+        FileSendThread fileSend = new FileSendThread(fileSocket);
         fileSend.start();
-        new FileReceiveThread(user, this).start();
+        new FileReceiveThread(fileSocket, this).start();
 
 
         // Barre supérieure (Header)
@@ -163,7 +168,7 @@ public abstract class ChatApp extends Application {
         sendButton.setOnAction(e -> {
             String message = inputField.getText();
             if (!message.isEmpty()) {
-                // messageSend.send(message);
+                messageSend.send(message);
                 addMessage(message, true); // Message envoyé
                 inputField.clear();
             }
@@ -172,7 +177,7 @@ public abstract class ChatApp extends Application {
         inputField.setOnAction(e -> {
             String message = inputField.getText();
             if (!message.isEmpty()) {
-                // messageSend.send(message);
+                messageSend.send(message);
                 addMessage(message, true); // Message envoyé
                 inputField.clear();
             }

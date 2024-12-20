@@ -7,24 +7,16 @@ import java.net.Socket;
 
 public class MessageWriteThread extends Thread
 {
+    private final PrintWriter writer;
 
-    private final Socket socket;
-
-    public MessageWriteThread(Socket socket)
+    public MessageWriteThread(Socket socket) throws IOException
     {
-        this.socket = socket;
+        this.writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
     }
-
+    
     public void send(String message)
     {
-        try
-        {
-            PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+        if (message != null)
             writer.println(message);
-
-        } catch (IOException e)
-        {
-            System.out.println("Écriture impossible: " + e.getMessage());
-        }
-    }
+    }    
 }

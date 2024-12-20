@@ -9,18 +9,12 @@ import java.net.Socket;
 import alanya.ChatApp;
 import javafx.application.Platform;
 
-/*
-* Le principe est que le thread tourne sans rien faire (car on ne redéfini pas la méthode run())
-* puis on crée une fonction receive() qui sera exécutée par ce thread lorsque le frontend
-* fera appel à ce thread
- */
-
 public class FileReceiveThread extends Thread
 {
     private final Socket socket;
-    public static boolean receiving = false;
-
     private final ChatApp chatApp;
+    
+    public static boolean receiving = false;
 
     public FileReceiveThread(Socket socket, ChatApp chatApp)
     {
