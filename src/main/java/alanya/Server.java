@@ -11,10 +11,12 @@ public class Server extends ChatApp {
     @Override
     public void start(Stage primaryStage) {
         try (ServerSocket messageServerSocket = new ServerSocket(MESSAGE_PORT);
-            ServerSocket filServerSocket = new ServerSocket(FILE_PORT))
+            ServerSocket fileServerSocket = new ServerSocket(FILE_PORT);
+            ServerSocket callServerSocket = new ServerSocket(CALL_PORT))
         {
             this.messageSocket = messageServerSocket.accept();
-            this.fileSocket = filServerSocket.accept();
+            this.fileSocket = fileServerSocket.accept();
+            this.callSocket = callServerSocket.accept();
             this.username = "Serveur";
             super.start(primaryStage);
         } catch (IOException e) {
@@ -22,7 +24,8 @@ public class Server extends ChatApp {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         launch(args);
     }
 }

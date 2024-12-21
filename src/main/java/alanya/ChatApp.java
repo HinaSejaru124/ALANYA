@@ -6,6 +6,11 @@ import java.net.Socket;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
+import javax.sound.sampled.LineUnavailableException;
+
+import audio.AudioReceiveThread;
+import audio.AudioSendThread;
+import audio.AudioSetup;
 import file.FileReceiveThread;
 import file.FileSendThread;
 import javafx.application.Application;
@@ -32,8 +37,8 @@ import javafx.stage.Stage;
 import message.MessageReadThread;
 import message.MessageWriteThread;
 
-public abstract class ChatApp extends Application
-{
+public abstract class ChatApp extends Application {
+
     private static final double ICON_SIZE = 24; // Taille des icônes
     private VBox messagesBox;
     private TextField inputField;
@@ -43,23 +48,32 @@ public abstract class ChatApp extends Application
 
     protected Socket messageSocket;
     protected Socket fileSocket;
+    protected Socket callSocket;
 
-    protected  static final int MESSAGE_PORT = 7000;
-    protected  static final int FILE_PORT = 7001;
+    protected static final int MESSAGE_PORT = 7000;
+    protected static final int FILE_PORT = 7001;
+    protected static final int CALL_PORT = 7002;
 
     @SuppressWarnings("exports")
     @Override
-    public void start(Stage primaryStage) throws IOException
-    {
-        // Threads de communication
+    public void start(Stage primaryStage) throws IOException {
+
+        // Threads pour les messages
         MessageWriteThread messageSend = new MessageWriteThread(messageSocket);
         messageSend.start();
         new MessageReadThread(messageSocket, this).start();
-            
+
+        // Threads pour les fichiers
         FileSendThread fileSend = new FileSendThread(fileSocket);
         fileSend.start();
         new FileReceiveThread(fileSocket, this).start();
 
+        // Threads pour les appels audio
+        AudioSetup audioSetup = new AudioSetup();
+        AudioSendThread audioSend = new AudioSendThread(callSocket, audioSetup.microphone);
+        audioSend.start();
+        AudioReceiveThread audioReceive = new AudioReceiveThread(callSocket, audioSetup.speakers);
+        audioReceive.start();
 
         // Barre supérieure (Header)
         HBox header = new HBox();
@@ -82,10 +96,10 @@ public abstract class ChatApp extends Application
                 + "-fx-max-width:40;"
                 + "-fx-max-width:40;");
 
+        // Boutons d'appel vidéo et audio
         Button videoCallButton = createIconButton("/icons/video-camera-alt.png");
-        //videoCallButton.setStyle();
-        //videoCallButton.setAlignment(Pos.TOP_LEFT);
-        header.getChildren().addAll(userimage, contactName, spacerHeader, videoCallButton);
+        Button audioCallButton = createIconButton("/icons/phone-call.png");
+        header.getChildren().addAll(userimage, contactName, spacerHeader, audioCallButton, videoCallButton);
 
         // Zone des messages (ScrollPane)
         messagesBox = new VBox(2);
@@ -149,8 +163,6 @@ public abstract class ChatApp extends Application
         chooseFileButton.setPrefWidth(50);
 
         // Positionnement du bouton (overlay) dans la StackPane
-        //sendButton.setTranslateX(230); // Alignement en haut à droite
-        //StackPane.setMargin(sendButton, new Insets(10));   // Marges pour l'espacement
         chooseFileButton.setTranslateX(140);
         StackPane.setMargin(chooseFileButton, new Insets(10));   // Marges pour l'espacement
 
@@ -190,10 +202,22 @@ public abstract class ChatApp extends Application
             }
         });
 
+        audioCallButton.setOnAction(e -> {
+            try {
+                audioSetup.microphone.open(AudioSetup.format);
+                audioSetup.speakers.open(AudioSetup.format);
+                audioSetup.microphone.start();
+                audioSetup.speakers.start();
+                audioSend.sendAudio(true);
+                audioReceive.receiveAudio(true);
+            } catch (LineUnavailableException error) {
+                System.out.println(error.getMessage());
+            }
+        });
+
         // Mise en page principale
         SplitPane root = new SplitPane();
         root.getItems().addAll(conversZone);
-        //root.setDividerPositions(0.3); // 30% pour les contacts
         root.setStyle("-fx-background-color: transparent; -fx-margin:0");
 
         // Créer la scène
@@ -202,13 +226,6 @@ public abstract class ChatApp extends Application
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
         primaryStage.show();
-
-        // new Thread(() -> {
-        //     String response;
-        //     if ((response = messageReceive.receive()) != null) {
-        //         Platform.runLater(() -> addMessage(response, false)); // Message reçu
-        //     }
-        // }).start();
     }
 
     // Ajouter un message dans la boîte de messages
@@ -294,9 +311,9 @@ public abstract class ChatApp extends Application
 
         // Wrapping pour les longs messages uniquement
         double maxWidth = 250; // Limite de largeur maximale en pixels
-        if (fileNameText.getBoundsInLocal().getWidth() > maxWidth)
+        if (fileNameText.getBoundsInLocal().getWidth() > maxWidth) {
             fileNameText.setWrappingWidth(maxWidth); // Active le retour à la ligne si le texte dépasse la largeur
-
+        }
         fileNameText.setStyle("-fx-font-size: 14px;");
 
         // Taille du fichier (exemple)
@@ -384,5 +401,9 @@ public abstract class ChatApp extends Application
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
     }
 }

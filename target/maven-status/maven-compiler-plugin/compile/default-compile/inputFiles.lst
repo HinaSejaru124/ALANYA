@@ -1,8 +1,11 @@
 /home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/file/FileSendThread.java
+/home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/audio/AudioReceiveThread.java
 /home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/alanya/Server.java
 /home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/alanya/ChatApp.java
 /home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/message/MessageReadThread.java
+/home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/audio/AudioSendThread.java
 /home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/alanya/Client.java
+/home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/message/MessageWriteThread.java
 /home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/module-info.java
-/home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/message/MessgaeWriteThread.java
+/home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/audio/AudioSetup.java
 /home/n/Documents/Java/Connexion ordinateurs/alanya/src/main/java/file/FileReceiveThread.java

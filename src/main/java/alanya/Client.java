@@ -17,6 +17,7 @@ public class Client extends ChatApp
         {
             this.messageSocket = new Socket(SERVER, MESSAGE_PORT);
             this.fileSocket = new Socket(SERVER, FILE_PORT);
+            this.callSocket = new Socket(SERVER, CALL_PORT);
             this.username = "Client";
             super.start(primaryStage);
         } 
