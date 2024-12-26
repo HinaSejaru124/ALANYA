@@ -35,8 +35,10 @@ public class ChatApp extends Application {
     private ChatClient client;
     private VBox messagesBox;
     private VBox contactsBox;
+    private ScrollPane scrollPane;
     private TextField inputField;
     private String filePath;
+
 
     private final String SERVER = "localhost";
     private final int PORT = 7000;
@@ -52,7 +54,7 @@ public class ChatApp extends Application {
             // Barre supérieure (Header)
             HBox header = new HBox();
             header.setPadding(new Insets(10));
-            header.setStyle("-fx-background-color: #37383B;");
+            header.setStyle("-fx-background-color: #FFFFFF;");
 
             // Espaceur dynamique pour pousser le bouton à droite
             Region spacerHeader = new Region();
@@ -61,7 +63,7 @@ public class ChatApp extends Application {
             Text contactName = new Text("Contact Name");
             contactName.setTranslateX(10);
             contactName.setTranslateY(8);
-            contactName.setStyle("-fx-fill: white;-fx-font-size: 16px;");
+            contactName.setStyle("-fx-fill: black;-fx-font-size: 16px;");
             Button userimage = createIconButton("/icons/user.png");
             userimage.setStyle("-fx-background-color: #B9BCC6;" +
                                "-fx-background-radius: 50%;" +
@@ -76,11 +78,11 @@ public class ChatApp extends Application {
             header.getChildren().addAll(userimage,contactName,spacerHeader, videoCallButton);
 
             // Zone des messages (ScrollPane)
-            messagesBox = new VBox(10);
+            messagesBox = new VBox(1);
             messagesBox.setPadding(new Insets(10));
             messagesBox.setStyle("-fx-background-color: #ECE5DD;"); // Fond clair, comme WhatsApp
 
-            VBox messageBoxBig = new VBox(10);
+            VBox messageBoxBig = new VBox(1);
             messageBoxBig.setPadding(new Insets(10));
             messageBoxBig.setStyle("-fx-background-color: #ECE5DD;");
 
@@ -93,7 +95,7 @@ public class ChatApp extends Application {
     );
             messagesBox.setBackground(new Background(backgroundImage));
 
-            ScrollPane scrollPane = new ScrollPane(messagesBox);
+            scrollPane = new ScrollPane(messagesBox);
             scrollPane.setFitToWidth(true);
             scrollPane.setStyle("-fx-background-color: #ECE5DD; " +
                     "-fx-hbar-policy: never; " + // Ne jamais afficher la barre horizontale
@@ -272,14 +274,22 @@ public class ChatApp extends Application {
         if (isSentByUser) {
             messageContainer.setAlignment(Pos.CENTER_RIGHT);
             messageBox.setAlignment(Pos.CENTER_RIGHT);
+            // Fait défiler le ScrollPane vers le bas
+            Platform.runLater(() -> scrollPane.setVvalue(2.0));
         } else {
             messageContainer.setAlignment(Pos.CENTER_LEFT);
             messageBox.setAlignment(Pos.CENTER_LEFT);
+            // Fait défiler le ScrollPane vers le bas
+            Platform.runLater(() -> scrollPane.setVvalue(2.0));
         }
     
         messageContainer.getChildren().add(messageBox);
         messagesBox.getChildren().add(messageContainer);
+
+
+    
     }
+
 
 
    /*private void addMessage(String message, boolean isSentByUser) {
@@ -406,9 +416,11 @@ public class ChatApp extends Application {
         if (isSentByUser) {
             messageContainer.setAlignment(Pos.CENTER_RIGHT);
             messageBox.setAlignment(Pos.CENTER_RIGHT);
+            Platform.runLater(() -> scrollPane.setVvalue(2.0));
         } else {
             messageContainer.setAlignment(Pos.CENTER_LEFT);
             messageBox.setAlignment(Pos.CENTER_LEFT);
+            Platform.runLater(() -> scrollPane.setVvalue(2.0));
         }
         
         messageContainer.getChildren().add(messageBox);
