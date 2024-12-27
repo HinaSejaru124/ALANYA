@@ -18,7 +18,9 @@ public class Server extends ChatApp {
             this.fileSocket = fileServerSocket.accept();
             this.callSocket = callServerSocket.accept();
             this.username = "Serveur";
+            this.usernameCall = "Client";
             super.start(primaryStage);
+
         } catch (IOException e) {
             showError("Impossible de lancer le serveur: " + e.getMessage());
         }
