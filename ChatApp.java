@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.time.LocalTime;
-import java.time.Duration;
+//import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 
 import javax.sound.sampled.LineUnavailableException;
@@ -44,6 +44,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import message.MessageReadThread;
 import message.MessageWriteThread;
@@ -54,12 +55,13 @@ public abstract class ChatApp extends Application {
     private VBox messagesBox;
     private TextField inputField;
     // Barre d'appel (Initialisation globale)
-   // private HBox callBar;
+    private HBox callBar;
     private Label callTimer;
-    //private Timeline callDurationUpdater;
+    private Timeline callDurationUpdater;
 
     private String filePath;
     protected String username;
+    protected String usernameCall;
 
     protected Socket messageSocket;
     protected Socket fileSocket;
@@ -89,6 +91,42 @@ public abstract class ChatApp extends Application {
         audioSend.start();
         AudioReceiveThread audioReceive = new AudioReceiveThread(callSocket, audioSetup.speakers);
         audioReceive.start();
+
+
+         // Barre d'appel (invisible par défaut)
+         callBar = new HBox(10);
+         callBar.setPadding(new Insets(10));
+         callBar.setStyle("-fx-background-color: #f4f4f4;");
+         callBar.setAlignment(Pos.CENTER_LEFT);
+         callBar.setVisible(false); // Masqué par défaut
+
+         Label callUsernameLabel = new Label(usernameCall);
+         callUsernameLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #333;");
+ 
+         callTimer = new Label("00:00");
+         callTimer.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
+ 
+         Button hangUpButton = createIconButton("/icons/hangup.png");
+         hangUpButton.setStyle("-fx-background-color: #ff4c4c;"
+                + "-fx-background-radius: 50%; "
+                + "-fx-min-width: 50px; "
+                + "-fx-min-height: 50px; "
+                + "-fx-max-width: 50px; "
+                + "-fx-max-height: 50px; "
+                + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0.1, 0, 2);");
+
+         hangUpButton.setOnAction(e -> endCall());
+        
+         // Espaceur dynamique pour pousser le bouton à droite
+        Region spacerMainContent1 = new Region();
+        HBox.setHgrow(spacerMainContent1, Priority.ALWAYS);
+
+        Region spacerMainContent2 = new Region();
+        HBox.setHgrow(spacerMainContent2, Priority.ALWAYS);
+
+         callBar.getChildren().addAll(callUsernameLabel, spacerMainContent1,callTimer, spacerMainContent2,hangUpButton);
+         callBar.setSpacing(20);
+
 
         // Barre supérieure (Header)
         HBox header = new HBox();
@@ -186,11 +224,16 @@ public abstract class ChatApp extends Application {
 
         inputBox.getChildren().addAll(inputZone, sendButton);
 
+          // Ajouter la barre d'appel au dessus de la zone de conversation
+        StackPane mainContent = new StackPane();
+        mainContent.getChildren().addAll(header,callBar);
+
+
         BorderPane conversZone = new BorderPane();
-        conversZone.setTop(header);
+        conversZone.setTop(mainContent);
         conversZone.setCenter(messageBoxBig);
         conversZone.setBottom(inputBox);
-
+ 
         // Actions des boutons
         sendButton.setOnAction(e -> {
             String message = inputField.getText();
@@ -220,17 +263,14 @@ public abstract class ChatApp extends Application {
         });
 
         audioCallButton.setOnAction(e -> {
+            /*audioSetup.microphone.open(AudioSetup.format);
+            audioSetup.speakers.open(AudioSetup.format);
+            audioSetup.microphone.start();
+            audioSetup.speakers.start();
+            audioSend.sendAudio(true);
+            audioReceive.receiveAudio(true);*/
             addAudioCallBubble(true, audioSetup);
-            try {
-                audioSetup.microphone.open(AudioSetup.format);
-                audioSetup.speakers.open(AudioSetup.format);
-                audioSetup.microphone.start();
-                audioSetup.speakers.start();
-                audioSend.sendAudio(true);
-                audioReceive.receiveAudio(true);
-            } catch (LineUnavailableException error) {
-                System.out.println(error.getMessage());
-            }
+            startCall();
         });
 
 
@@ -413,95 +453,72 @@ public abstract class ChatApp extends Application {
     }
 
     public void addAudioCallBubble(boolean isSentByUser, AudioSetup audioSetup) {
-    HBox messageContainer = new HBox();
-    messageContainer.setPadding(new Insets(5));
+        HBox messageContainer = new HBox();
+        messageContainer.setPadding(new Insets(5));
 
-    VBox messageBox = new VBox(2);
+        VBox messageBox = new VBox(2);
 
-    // Conteneur principal de la bulle
-    VBox callBubble = new VBox(10);
-    callBubble.setPadding(new Insets(8));
-    callBubble.setStyle("-fx-background-color: " + (isSentByUser ? "#DCF8C6" : "#FFFFFF") + ";"
-            + "-fx-background-radius: 15; -fx-border-radius: 15;");
+        // Conteneur principal de la bulle
+        VBox callBubble = new VBox(10);
+        callBubble.setPadding(new Insets(8));
+        callBubble.setStyle("-fx-background-color: " + (isSentByUser ? "#DCF8C6" : "#FFFFFF") + ";"
+                + "-fx-background-radius: 15; -fx-border-radius: 15;");
 
-    // Titre de la bulle
-    Text callText = new Text("Appel audio en cours...");
-    callText.setStyle("-fx-font-size: 14px; -fx-fill: #333333;");
+        // Titre de la bulle
+        Text callText = new Text("Appel audio en cours...");
+        callText.setStyle("-fx-font-size: 14px; -fx-fill: #333333;");
 
-    // Canvas pour afficher les vibrations
-    Canvas audioCanvas = new Canvas(200, 50);
-    GraphicsContext gc = audioCanvas.getGraphicsContext2D();
+        // Canvas pour afficher les vibrations
+        Canvas audioCanvas = new Canvas(200, 50);
+        GraphicsContext gc = audioCanvas.getGraphicsContext2D();
 
-    // Animation pour dessiner les vibrations
-    new Thread(() -> {
-        try {
-            audioSetup.microphone.open(AudioSetup.format);
-            audioSetup.microphone.start();
+        // Animation pour dessiner les vibrations
+        new Thread(() -> {
+            try {
+                audioSetup.microphone.open(AudioSetup.format);
+                audioSetup.microphone.start();
 
-            byte[] buffer = new byte[1024];
-            while (true) {
-                int bytesRead = audioSetup.microphone.read(buffer, 0, buffer.length);
-                if (bytesRead > 0) {
-                    // Effacer l'ancien contenu
-                    gc.clearRect(0, 0, audioCanvas.getWidth(), audioCanvas.getHeight());
+                byte[] buffer = new byte[1024];
+                while (true) {
+                    int bytesRead = audioSetup.microphone.read(buffer, 0, buffer.length);
+                    if (bytesRead > 0) {
+                        // Effacer l'ancien contenu
+                        gc.clearRect(0, 0, audioCanvas.getWidth(), audioCanvas.getHeight());
 
-                    // Dessiner les vibrations
-                    for (int i = 0; i < bytesRead - 1; i += 2) {
-                        double amplitude = Math.abs(buffer[i]);
-                        double barHeight = (amplitude / 128.0) * audioCanvas.getHeight();
-                        gc.setFill(Color.LIGHTBLUE);
-                        gc.fillRect(i * 2, audioCanvas.getHeight() - barHeight, 4, barHeight);
+                        // Dessiner les vibrations
+                        for (int i = 0; i < bytesRead - 1; i += 2) {
+                            double amplitude = Math.abs(buffer[i]);
+                            double barHeight = (amplitude / 128.0) * audioCanvas.getHeight();
+                            gc.setFill(Color.LIGHTBLUE);
+                            gc.fillRect(i * 2, audioCanvas.getHeight() - barHeight, 4, barHeight);
+                        }
+
+                        Thread.sleep(50); // Réduire la charge CPU
                     }
-
-                    Thread.sleep(50); // Réduire la charge CPU
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        }).start();
+
+        // Ajout des éléments dans la bulle
+        callBubble.getChildren().addAll(callText, audioCanvas);
+
+        // Gestion de l'alignement
+        if (isSentByUser) {
+            messageContainer.setAlignment(Pos.CENTER_RIGHT);
+            messageBox.setAlignment(Pos.CENTER_RIGHT);
+        } else {
+            messageContainer.setAlignment(Pos.CENTER_LEFT);
+            messageBox.setAlignment(Pos.CENTER_LEFT);
         }
-    }).start();
 
-    // Ajout des éléments dans la bulle
-    callBubble.getChildren().addAll(callText, audioCanvas);
-
-    // Gestion de l'alignement
-    if (isSentByUser) {
-        messageContainer.setAlignment(Pos.CENTER_RIGHT);
-        messageBox.setAlignment(Pos.CENTER_RIGHT);
-    } else {
-        messageContainer.setAlignment(Pos.CENTER_LEFT);
-        messageBox.setAlignment(Pos.CENTER_LEFT);
-    }
-
-    messageBox.getChildren().add(callBubble);
-    messageContainer.getChildren().add(messageBox);
-    messagesBox.getChildren().add(messageContainer);
+        messageBox.getChildren().add(callBubble);
+        messageContainer.getChildren().add(messageBox);
+        messagesBox.getChildren().add(messageContainer);
 }
 
-        // Barre d'appel (invisible par défaut)
-        private HBox callBar = new HBox(10);
-        /*callBar.setPadding(new Insets(10));
-        callBar.setStyle("-fx-background-color: #f4f4f4;");
-        callBar.setAlignment(Pos.CENTER_LEFT);
-        callBar.setVisible(false); // Masqué par défaut*/
-
-        Label callUsernameLabel = new Label(username);
-        /*callUsernameLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #333;");*/
-
-        /*callTimer = new Label("00:00");
-        callTimer.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");*/
-
-        Button hangUpButton = createIconButton("/icons/hangup.png");
-        /*hangUpButton.setStyle("-fx-background-color: #ff4c4c; -fx-background-radius: 50%;");
-        hangUpButton.setOnAction(e -> endCall());*/
-
-        /*callBar.getChildren().addAll(callUsernameLabel, callTimer, hangUpButton);
-        callBar.setSpacing(20);
-
-        // Ajouter la barre d'appel au dessus de la zone de conversation
-        VBox mainContent = new VBox(callBar, conversZone);
-
-
+       
     private void startCall() {
         // Afficher la barre d'appel
         callBar.setVisible(true);
@@ -532,7 +549,7 @@ public abstract class ChatApp extends Application {
             callDurationUpdater.stop();
             callTimer.setText("00:00");
         }
-    }*/
+    }
 
 
 
