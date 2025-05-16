@@ -44,7 +44,7 @@ import views.MainApp;
 import views.Util;
 
 public final class Client extends MainApp implements Terminal {
-    private static final String SERVER = "192.168.1.117";
+    private static final String SERVER = "192.168.1.117";;
 
     private final String dbUrl = String.format("jdbc:mysql://%s:3306/ALANYA", SERVER);
     private final String dbUser = "n";
