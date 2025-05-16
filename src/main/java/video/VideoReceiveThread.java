@@ -27,13 +27,10 @@ public class VideoReceiveThread extends Thread {
                 new AudioReceiveThread(audioSocket, videoSetup).start();
 
                 new Thread(() -> {
-                    if (videoSetup.onCall) {
-                    }
                 }).start();
             }
         } catch (IOException e) {
             System.out.println("Erreur dans la réception des packets audio: " + e.getMessage());
-            // audioSetup.onCall = false;
         }
     }
 }

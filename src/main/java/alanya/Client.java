@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -27,6 +28,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import audio.AudioReceiveThread;
+import audio.AudioSendThread;
+import audio.AudioSetup;
 import controllers.Contact;
 import controllers.Message;
 import file.FileReceiveThread;
@@ -40,10 +44,11 @@ import views.MainApp;
 import views.Util;
 
 public final class Client extends MainApp implements Terminal {
-    private static final String SERVER = "localhost";
-    private static final int THREAD_POOL_SIZE = 5;
+    private static final String SERVER = "192.168.1.117";
 
-    private final ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+    private final String dbUrl = String.format("jdbc:mysql://%s:3306/ALANYA", SERVER);
+    private final String dbUser = "n";
+    private final String dbPassword = "Oben1650!";
 
     private int user_id;
     private String nom;
@@ -51,12 +56,15 @@ public final class Client extends MainApp implements Terminal {
     private String userPassword;
     private String profilePic;
 
-    private final String dbUrl = String.format("jdbc:mysql://%s:3306/ALANYA", SERVER);
-    private final String dbUser = "root";
-    private final String dbPassword = "jeff@14022003";
-
     private final File clientFile = new File(System.getProperty("user.home"), ".client.aly");
     private final List<Contact> contacts = new ArrayList<>();
+
+    private static final int THREAD_POOL_SIZE = 5;
+    private final ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+
+    private final AudioSetup audioSetup = new AudioSetup();
+    private AudioSendThread audioSendThread;
+    private AudioReceiveThread audioReceiveThread;
 
     @Override
     public void start(Stage primaryStage) {
@@ -65,7 +73,6 @@ public final class Client extends MainApp implements Terminal {
         createAppDirectories();
         setupUIHandlers(primaryStage);
         initializeUser();
-        infosUserController.loadInfo(profilePic, nom, prenom, user_id);
         loadContacts();
         scheduleStatusRefresh();
         startListeners();
@@ -90,7 +97,13 @@ public final class Client extends MainApp implements Terminal {
                 sendMessage();
         });
         homeUI.chooseFileButton.setOnAction(e -> handleFileSend());
-
+        homeUI.item2.setOnAction(e -> {
+            showLogin();
+            try {
+                updateUserStatus(false);
+            } catch (SQLException ex) {
+            }
+        });
         primaryStage.setOnCloseRequest(event -> handleAppClose());
     }
 
@@ -173,19 +186,21 @@ public final class Client extends MainApp implements Terminal {
 
     private void handleFileSend() {
         File file = homeController.chooseFile();
-        contacts.stream()
-                .filter(c -> c.getUserId() == interlocuteurId)
-                .findFirst()
-                .ifPresent(c -> c.getConversation().add(new Message(file, LocalTime.now(), true)));
-        homeController.addFile(file, LocalTime.now(), true);
+        if (file != null) {
+            contacts.stream()
+                    .filter(c -> c.getUserId() == interlocuteurId)
+                    .findFirst()
+                    .ifPresent(c -> c.getConversation().add(new Message(file, LocalTime.now(), true)));
+            homeController.addFile(file, LocalTime.now(), true);
 
-        try {
-            String ip = findUserById(interlocuteurId);
-            try (Socket socket = new Socket(ip, FILE_PORT)) {
-                new FileSendThread(socket).send(file.getAbsolutePath());
+            try {
+                String ip = findUserById(interlocuteurId);
+                try (Socket socket = new Socket(ip, FILE_PORT)) {
+                    new FileSendThread(socket).send(file.getAbsolutePath());
+                }
+            } catch (IOException ex) {
+                Util.showError("Fichier non envoyé");
             }
-        } catch (IOException ex) {
-            Util.showError("Fichier non envoyé");
         }
     }
 
@@ -196,11 +211,15 @@ public final class Client extends MainApp implements Terminal {
             } catch (SQLException ex) {
                 Util.showError("Erreur mise à jour statut: " + ex.getLocalizedMessage());
             }
+
             try (Socket socket = new Socket(SERVER, SERVER_PORT);
                     PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+                out.println(false);
                 out.println(user_id);
             } catch (IOException ignored) {
             }
+
+            infosUserController.loadInfo(profilePic, nom, prenom, user_id);
             showHome();
         } else {
             loginUI.getErrorAuth().setVisible(true);
@@ -216,18 +235,20 @@ public final class Client extends MainApp implements Terminal {
 
         if (nom.isEmpty() || prenom.isEmpty() || userPassword.isEmpty()) {
             Util.showError("Veuillez remplir tous les champs.");
-            return;
-        }
-        try (Socket socket = new Socket(SERVER, SERVER_PORT);
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
-            user_id = Integer.parseInt(in.readLine());
-            enrollUser();
-            out.println(user_id);
-            updateUserStatus(true);
-            showHome();
-        } catch (IOException | SQLException ex) {
-            Util.showError("Erreur lors de la connexion: " + ex.getLocalizedMessage());
+        } else {
+            try (Socket socket = new Socket(SERVER, SERVER_PORT);
+                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+                out.println(true);
+                user_id = Integer.parseInt(in.readLine());
+                enrollUser();
+                out.println(user_id);
+                updateUserStatus(true);
+                showHome();
+                infosUserController.loadInfo(profilePic, nom, prenom, user_id);
+            } catch (IOException | SQLException ex) {
+                Util.showError("Erreur lors de la connexion: " + ex.getLocalizedMessage());
+            }
         }
     }
 
@@ -247,6 +268,7 @@ public final class Client extends MainApp implements Terminal {
             }
         } catch (SQLException ex) {
             Util.showError("Erreur chargement contacts: " + ex.getLocalizedMessage());
+            System.exit(0);
         }
     }
 
@@ -258,6 +280,7 @@ public final class Client extends MainApp implements Terminal {
     private void startListeners() {
         new Thread(this::runMessageListener, "MessageListener").start();
         new Thread(this::runFileListener, "FileListener").start();
+        new Thread(this::runAudioCallListener, "AudioCallListener").start();
     }
 
     private void handleAppClose() {
@@ -296,15 +319,16 @@ public final class Client extends MainApp implements Terminal {
                         });
             }
         } catch (SQLException ex) {
-            Platform.runLater(
-                    () -> Util.showError("Impossible de rafraîchir les statuts: " + ex.getLocalizedMessage()));
+            Platform.runLater(() -> Util
+                    .showError("Impossible de mettre à jour les états des contacts: " + ex.getLocalizedMessage()));
+            System.exit(0);
         }
     }
 
     private void runMessageListener() {
-        try (ServerSocket server = new ServerSocket(MESSAGE_PORT)) {
+        try (ServerSocket messageServerSocket = new ServerSocket(MESSAGE_PORT)) {
             while (true) {
-                Socket client = server.accept();
+                Socket client = messageServerSocket.accept();
                 pool.submit(() -> handleMessageConnection(client));
             }
         } catch (IOException ex) {
@@ -313,10 +337,21 @@ public final class Client extends MainApp implements Terminal {
     }
 
     private void runFileListener() {
-        try (ServerSocket server = new ServerSocket(FILE_PORT)) {
+        try (ServerSocket fileServerSocket = new ServerSocket(FILE_PORT)) {
             while (true) {
-                Socket client = server.accept();
+                Socket client = fileServerSocket.accept();
                 pool.submit(() -> handleFileConnection(client));
+            }
+        } catch (IOException ex) {
+            Platform.runLater(() -> Util.showError(ex.getLocalizedMessage()));
+        }
+    }
+
+    private void runAudioCallListener() {
+        try (ServerSocket audioCallServerSocket = new ServerSocket(AUDIO_INFO_PORT)) {
+            while (true) {
+                Socket client = audioCallServerSocket.accept();
+                handleAudioConnection(client, audioSetup);
             }
         } catch (IOException ex) {
             Platform.runLater(() -> Util.showError(ex.getLocalizedMessage()));
@@ -369,22 +404,25 @@ public final class Client extends MainApp implements Terminal {
                     Platform.runLater(() -> homeController.addMessage(message, LocalTime.now(), false));
                 }
             } else {
-                try (Connection connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
-                    PreparedStatement ps = connection.prepareStatement("SELECT * from Utilisateur WHERE user_id = ?");
-                    ps.setInt(1, user_id);
-                    ResultSet rs = ps.executeQuery();
-                    rs.next();
+                Platform.runLater(() -> {
+                    try (Connection connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
+                        PreparedStatement ps = connection
+                                .prepareStatement("SELECT * from Utilisateur WHERE user_id = ?");
+                        ps.setInt(1, user_id);
+                        ResultSet rs = ps.executeQuery();
+                        rs.next();
 
-                    Contact unsaved = homeController.addContact(rs.getInt("user_id"),
-                            rs.getString("nom") + " " + rs.getString("prenom"),
-                            rs.getBoolean("connecte"));
-                    unsaved.getConversation().add(new Message(message, LocalTime.now(), false));
+                        Contact unsaved = homeController.addContact(rs.getInt("user_id"),
+                                rs.getString("nom") + " " + rs.getString("prenom"),
+                                rs.getBoolean("connecte"));
+                        unsaved.getConversation().add(new Message(message, LocalTime.now(), false));
 
-                    contacts.add(unsaved);
+                        contacts.add(unsaved);
 
-                } catch (SQLException ex) {
-                    Util.showError(ex.getLocalizedMessage());
-                }
+                    } catch (SQLException ex) {
+                        Util.showError(ex.getLocalizedMessage());
+                    }
+                });
             }
         } catch (IOException e) {
             Platform.runLater(() -> Util.showError("Impossible de lire le message"));
@@ -411,28 +449,80 @@ public final class Client extends MainApp implements Terminal {
                     Platform.runLater(() -> homeController.addFile(file, LocalTime.now(), false));
                 }
             } else {
-                try (Connection connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
-                    PreparedStatement ps = connection.prepareStatement("SELECT * from Utilisateur WHERE user_id = ?");
-                    ps.setInt(1, user_id);
-                    ResultSet rs = ps.executeQuery();
-                    rs.next();
+                Platform.runLater(() -> {
+                    try (Connection connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
+                        PreparedStatement ps = connection
+                                .prepareStatement("SELECT * from Utilisateur WHERE user_id = ?");
+                        ps.setInt(1, user_id);
+                        ResultSet rs = ps.executeQuery();
+                        rs.next();
 
-                    Contact unsaved = homeController.addContact(rs.getInt("user_id"),
-                            rs.getString("nom") + " " + rs.getString("prenom"),
-                            rs.getBoolean("connecte"));
-                    unsaved.getConversation().add(new Message(file, LocalTime.now(), false));
+                        Contact unsaved = homeController.addContact(rs.getInt("user_id"),
+                                rs.getString("nom") + " " + rs.getString("prenom"),
+                                rs.getBoolean("connecte"));
+                        unsaved.getConversation().add(new Message(file, LocalTime.now(), false));
 
-                    contacts.add(unsaved);
+                        contacts.add(unsaved);
 
-                } catch (SQLException ex) {
-                    Util.showError(ex.getLocalizedMessage());
-                }
+                    } catch (SQLException ex) {
+                        Util.showError(ex.getLocalizedMessage());
+                    }
+                });
             }
         } catch (IOException e) {
             Platform.runLater(() -> Util.showError("Impossible de recevoir le fichier"));
         } finally {
             closeQuietly(socket);
         }
+    }
+
+    /*
+     * P
+     * A
+     * S
+     * 
+     * A
+     * C
+     * H
+     * E
+     * V
+     * É
+     */
+
+    private void handleAudioConnection(Socket socket, AudioSetup audioSetup) {
+        showAudioCallUI();
+        audioCallUI.getHangupButton().setOnAction(e -> {
+            try {
+                PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+                writer.println(false);
+            } catch (IOException ex) {
+                Platform.runLater(() -> Util.showError("Impossible de rejeter l'appel entrant"));
+            } finally {
+                closeQuietly(socket);
+            }
+            showHome();
+        });
+
+        audioCallUI.getCallButton().setOnAction(e -> {
+            try {
+                PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+                writer.println(true);
+
+                Socket audioSocket = new ServerSocket(AUDIO_PORT).accept();
+
+                audioSetup.getMicrophone().start();
+                audioSendThread = new AudioSendThread(audioSocket, audioSetup);
+                audioSendThread.start();
+
+                audioReceiveThread = new AudioReceiveThread(audioSocket, audioSetup);
+                audioReceiveThread.start();
+            } catch (IOException ex) {
+                Platform.runLater(() -> Util.showError("Impossible d'accepter l'appel entrant"));
+            } finally {
+                closeQuietly(socket);
+            }
+            showHome();
+        });
     }
 
     private void closeQuietly(Socket s) {

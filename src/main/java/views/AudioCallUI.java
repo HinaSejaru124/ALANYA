@@ -14,7 +14,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
-public class CallUI implements ViewsMethods {
+public class AudioCallUI implements ViewsMethods {
     private final BorderPane root;
     private final VBox callBox;
     private final HBox initialButtons;
@@ -29,7 +29,7 @@ public class CallUI implements ViewsMethods {
     private final Button userCallerPic;
     public Button backButton;
 
-    public CallUI() {
+    public AudioCallUI() {
         // Conteneur principal
         callBox = new VBox(15);
         callBox.setAlignment(Pos.CENTER);

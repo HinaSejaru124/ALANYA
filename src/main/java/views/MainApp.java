@@ -15,7 +15,7 @@ public class MainApp extends Application implements ViewsMethods {
     public LoginUI loginUI;
     public SignUI signUI;
     public HomeUI homeUI;
-    public CallUI callUI;
+    public AudioCallUI audioCallUI;
     public VideoCallUI videoCallUI;
     public InfosUserUI infosUserUI;
 
@@ -32,11 +32,11 @@ public class MainApp extends Application implements ViewsMethods {
         loginUI = new LoginUI();
         signUI = new SignUI();
         homeUI = new HomeUI();
-        callUI = new CallUI();
+        audioCallUI = new AudioCallUI();
         videoCallUI = new VideoCallUI();
         infosUserUI = new InfosUserUI();
 
-        scene = new Scene(homeUI.getRoot(), 800, 600);
+        scene = new Scene(loginUI.getRoot(), 800, 600);
         scene.getStylesheets().add(getClass().getResource("/styles/LoginUI.css").toExternalForm());
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
@@ -53,7 +53,7 @@ public class MainApp extends Application implements ViewsMethods {
         homeController = new HomeController(homeUI, this);
         homeController.start();
 
-        callController = new CallController(callUI, this);
+        callController = new CallController(audioCallUI, this);
         callController.start();
         
         infosUserController = new InfosUserController(infosUserUI, this);
@@ -80,8 +80,8 @@ public class MainApp extends Application implements ViewsMethods {
         scene.setRoot(infosUserUI.getRoot());
     }
 
-    public void showCallUI() {
-        scene.setRoot(callUI.getRoot());
+    public void showAudioCallUI() {
+        scene.setRoot(audioCallUI.getRoot());
     }
 
     public void showVideoCallUI() {

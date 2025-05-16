@@ -21,17 +21,13 @@ public class AudioReceiveThread extends Thread {
             InputStream in = socket.getInputStream();
 
             while (true) {
-                if (audioSetup.onCall);
-                {
-                    int count = in.read(buffer, 0, buffer.length);
-                    if (count > 0) {
-                        audioSetup.speakers.write(buffer, 0, count);
-                    }
+                int count = in.read(buffer, 0, buffer.length);
+                if (count > 0) {
+                    audioSetup.getSpeakers().write(buffer, 0, count);
                 }
             }
         } catch (IOException e) {
             System.out.println("Erreur dans la réception des packets audio: " + e.getMessage());
-            // audioSetup.onCall = false;
         }
     }
 }

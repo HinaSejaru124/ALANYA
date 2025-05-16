@@ -5,15 +5,15 @@ import javafx.animation.Timeline;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.util.Duration;
-import views.CallUI;
+import views.AudioCallUI;
 import views.MainApp;
 
 public class CallController {
     private Timeline callDurationUpdater;
-    private final CallUI ui;
+    private final AudioCallUI ui;
     private final MainApp app;
 
-    public CallController(CallUI ui, MainApp app) {
+    public CallController(AudioCallUI ui, MainApp app) {
         this.ui = ui;
         this.app = app;
     }

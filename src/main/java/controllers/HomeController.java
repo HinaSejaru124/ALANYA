@@ -36,10 +36,9 @@ public class HomeController implements ViewsMethods {
     }
 
     public void start() {
-        ui.audioCallButton.setOnAction(e -> app.showCallUI());
+        ui.audioCallButton.setOnAction(e -> app.showAudioCallUI());
         ui.closeButton.setOnAction(e -> ui.addContactBox.setVisible(false));
         ui.item1.setOnAction(e -> app.showInfosUser());
-        ui.item2.setOnAction(e -> app.showCallUI());
         ui.videoCallButton.setOnAction(e -> app.showVideoCallUI());
         keyboardController.bindEscapeKey();
 

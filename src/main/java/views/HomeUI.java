@@ -2,7 +2,6 @@ package views;
 
 import java.time.LocalDate;
 
-import controllers.HomeController;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
@@ -314,9 +313,6 @@ public class HomeUI implements ViewsMethods {
 		addContactBox.setVisible(false);
 		addContactBox.setTranslateY(170);
 		addContactButton.setOnAction(e -> addContactBox.setVisible(true));
-		MainApp app1 = new MainApp();
-		HomeController homeController = new HomeController(this, app1);
-		homeController.addContact(1, "Jeff", true);
 
 		root = new StackPane();
 		root.getChildren().addAll(app, addContactBox);

@@ -31,17 +31,14 @@ public final class VideoSendThread extends Thread {
                 new AudioSendThread(audiosocket, videoSetup).start();
 
                 new Thread(() -> {
-                    if (videoSetup.onCall) {
-                        try {
-                            BufferedImage bufferedImage = videoSetup.webcam.getImage();
-                            if (bufferedImage != null) {
-                                ImageIO.write(bufferedImage, "JPG", videOut);
-                                videOut.flush();
-                            }
-                            Thread.sleep(30); // 30 FPS
-                        } catch (IOException | InterruptedException e) {
-                            System.out.println("Erreur dans l'envoi des packets video: " + e.getMessage());
+                    try {
+                        BufferedImage bufferedImage = videoSetup.webcam.getImage();
+                        if (bufferedImage != null) {
+                            ImageIO.write(bufferedImage, "JPG", videOut);
+                            videOut.flush();
                         }
+                    } catch (IOException e) {
+                        System.out.println("Erreur dans l'envoi des packets video: " + e.getMessage());
                     }
                 }).start();
             }

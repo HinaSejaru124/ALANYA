@@ -8,7 +8,6 @@ public class AudioSendThread extends Thread {
 
     private final Socket socket;
     private final AudioSetup audioSetup;
-    public int count = 0;
 
     public AudioSendThread(Socket socket, AudioSetup audioSetup) {
         this.socket = socket;
@@ -22,12 +21,9 @@ public class AudioSendThread extends Thread {
             OutputStream out = socket.getOutputStream();
 
             while (true) {
-                if (audioSetup.onCall)
-                {
-                    count = audioSetup.microphone.read(buffer, 0, buffer.length);
-                    if (count > 0) {
-                        out.write(buffer, 0, count);
-                    }
+                int count = audioSetup.getMicrophone().read(buffer, 0, buffer.length);
+                if (count > 0) {
+                    out.write(buffer, 0, count);
                 }
             }
         } catch (IOException e) {
