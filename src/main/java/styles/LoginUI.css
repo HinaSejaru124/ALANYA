@@ -1,0 +1,169 @@
+
+
+.login-box {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 15px;
+    -fx-padding: 30px;
+    -fx-spacing: 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 50, 0.3, 0, 5);
+}
+
+/*.login-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333;
+    -fx-alignment: center;
+}*/
+
+.error-auth {
+    -fx-font-size: 14px;
+    -fx-text-fill: #FF0000;
+    -fx-alignment: center-left;
+}
+
+.text-field, .password-field {
+    -fx-pref-width: 250px;
+    -fx-font-size: 14px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 10px;
+    -fx-border-color: #ddd;
+    -fx-border-width: 1px;
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #6a85b6;
+    -fx-border-width: 2px;
+}
+
+.login-button {
+    -fx-background-color: linear-gradient(from 0% 100% to 0% 0%,#c45800,#F7AF33);
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 20px;
+    -fx-cursor: hand;
+}
+
+.login-button:hover {
+    -fx-background-color: linear-gradient(from 0% 50% to 0% 0%,#c45800,#F7AF33);
+}
+
+.back-button {
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: linear-gradient(from 0% 50% to 0% 0%,#c45800,#F7AF33);
+    -fx-font-size: 30px;
+    -fx-background-radius: 50px;
+    -fx-min-width: 50px;
+    -fx-min-height: 50px;
+    -fx-max-width: 50px;
+    -fx-max-height: 50px;
+    -fx-padding: 5px;
+    -fx-cursor: hand;
+
+}
+
+.lien {
+    -fx-underline: true; 
+    -fx-text-fill: #F7AF33; 
+    -fx-cursor: hand
+}
+
+.lien:hover {
+    -fx-text-fill: #C47C00;
+}
+
+.custom-menu {
+    -fx-background-radius: 10px;
+    -fx-padding: 5px;
+}
+
+.custom-menu-item .label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333;
+}
+
+.custom-menu-item {
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 10px;
+    -fx-background-color: white;
+}
+
+.custom-menu-item:hover {
+    -fx-background-color: #FFA500;
+}
+
+.custom-menu-item:hover .label{
+    -fx-text-fill: white;
+}
+
+.root-infos-user {
+    -fx-background-color: linear-gradient(from 0% 100% to 0% 0%,#FDBF89,#F7AF33);
+}
+
+.back-button {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+}
+
+.user-info-label {
+    -fx-font-size: 16px;
+    -fx-text-fill: #333333;
+    -fx-font-weight: bold;
+}
+
+/* Effet vitre sur la box principale */
+.call-glass {
+    -fx-background-color: rgba(255, 255, 255, 0.7);
+    -fx-background-radius: 20;
+    -fx-padding: 30;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0.3, 0, 4);
+    -fx-border-color: rgba(255, 255, 255, 0.3);
+    -fx-border-radius: 20;
+    -fx-border-width: 1.2;
+}
+
+/* Titre de l'appelant */
+.caller-name {
+    -fx-font-size: 24px;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 2, 0.5, 1, 1);
+}
+
+.call-container {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-background-radius: 20px;
+    -fx-padding: 30;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0.4, 0, 2);
+    -fx-alignment: center;
+}
+
+.caller-name {
+    -fx-font-size: 22px;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 0 10 0;
+}
+
+
+/* Hover effects */
+.call-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #66BB6A, #43A047);
+}
+
+.hangup-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #E57373, #C62828);
+}
+
+
+.back-button:hover {
+    -fx-background-color: #f5f5f5;
+    -fx-text-fill: #C47C00;
+}
+.border-pane {
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%,#c45800, #ffa406);
+    -fx-padding: 70px 200px;
+}
+
+
