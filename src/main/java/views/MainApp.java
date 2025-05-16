@@ -36,10 +36,12 @@ public class MainApp extends Application implements ViewsMethods {
         videoCallUI = new VideoCallUI();
         infosUserUI = new InfosUserUI();
 
-        scene = new Scene(loginUI.getRoot(), 800, 600);
+        scene = new Scene(homeUI.getRoot(), 800, 600);
         scene.getStylesheets().add(getClass().getResource("/styles/LoginUI.css").toExternalForm());
         primaryStage.setScene(scene);
-        primaryStage.setResizable(false);
+        //primaryStage.setResizable(false);
+        scene.widthProperty().addListener(homeUI.widthListener);
+
         primaryStage.getIcons().add(new Image(getClass().getResource("/images/Logo1-2.png").toExternalForm()));
         primaryStage.setTitle("ALANYA");
         primaryStage.show();

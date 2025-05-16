@@ -11,7 +11,7 @@ public class Message {
     private final File file;
 
     public Message(String textContent, LocalTime time, Boolean sentByUser) {
-        this.textContent = "textContent";
+        this.textContent = textContent;
         this.typeMessage = "text";
         this.sentByUser = sentByUser;
         this.time = time;

@@ -2,6 +2,8 @@ package views;
 
 import java.time.LocalDate;
 
+import controllers.HomeController;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
@@ -51,6 +53,7 @@ public class HomeUI implements ViewsMethods {
 	public MenuItem item1;
 	public MenuItem item2;
 	public LocalDate lastDisplayedDate = null;
+	public ChangeListener<Number> widthListener;
 	private final StackPane root;
 
 	protected final VBox newContactBox() {
@@ -155,8 +158,7 @@ public class HomeUI implements ViewsMethods {
 				+ "-fx-text-fill: #333333; "
 				+ "-fx-font-size: 14px; "
 				+ "-fx-border-color: transparent; "
-				+ "-fx-background-radius: 50px; "
-				+ "-fx-border-radius: 50px;"
+				+ "-fx-background-radius: 50px 0 0 50px;"
 				+ "-fx-min-height: 50px; "
 				+ "-fx-max-height: 50px; "
 				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0.1, 0, 2);-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
@@ -212,12 +214,12 @@ public class HomeUI implements ViewsMethods {
 		Region spacerChooseBox = new Region();
 		HBox.setHgrow(spacerChooseBox, Priority.ALWAYS);
 		HBox chooseFileBox = new HBox(10,spacerChooseBox, chooseFileButton);
+		chooseFileBox.setPadding(new Insets(5));
 		chooseFileBox.setStyle("-fx-background-color: white; "
 				+ "-fx-text-fill: #333333; "
 				+ "-fx-font-size: 14px; "
 				+ "-fx-border-color: transparent; "
-				+ "-fx-background-radius: 50px; "
-				+ "-fx-border-radius: 0 50px 50px 0;"
+				+ "-fx-background-radius: 0 50px 50px 0;"
 				+ "-fx-min-height: 50px; "
 				+ "-fx-max-height: 50px; "
 				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0.1, 0, 2);-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
@@ -298,21 +300,43 @@ public class HomeUI implements ViewsMethods {
 				+ "-fx-max-height: 50px; "
 				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0.1, 0, 2);");
 
-		addContactButton.setTranslateX(160);
-		addContactButton.setTranslateY(250);
+		Region spacerAddButton = new Region();
+		HBox.setHgrow(spacerAddButton, Priority.ALWAYS);
+		HBox addContactButtonBox = new HBox(10, spacerAddButton, addContactButton);
+
+		BorderPane addContactButtonStackPane = new BorderPane();
+		addContactButtonStackPane.setBottom(addContactButtonBox);
+		addContactButtonStackPane.setPadding(new Insets(20));
+		addContactButtonStackPane.setPickOnBounds(false);
 
 		StackPane contactsStackPane = new StackPane();
-		contactsStackPane.getChildren().addAll(contactsZone, addContactButton);
+		contactsStackPane.getChildren().addAll(contactsZone, addContactButtonStackPane);
 
 		// Mise en page principale
 		SplitPane app = new SplitPane();
 		app.getItems().addAll(contactsStackPane, conversZone);
 		app.setStyle("-fx-background-color: transparent; -fx-margin:0");
 
+
 		addContactBox = newContactBox();
 		addContactBox.setVisible(false);
 		addContactBox.setTranslateY(170);
 		addContactButton.setOnAction(e -> addContactBox.setVisible(true));
+		MainApp app1 = new MainApp();
+		HomeController homeController = new HomeController(this, app1);
+		homeController.addContact(1, "Jeff", true);
+
+		// Écoute de la largeur de la scène
+    	widthListener = (obs, oldVal, newVal) -> {
+            double width = newVal.doubleValue();
+            if (width < 700) {
+                app.setDividerPositions(0.5); // Pour petits écrans
+
+            } else {
+                app.setDividerPositions(0.3); // Pour grands écrans
+				addContactBox.setTranslateY(300);
+            }
+        };
 
 		root = new StackPane();
 		root.getChildren().addAll(app, addContactBox);

@@ -32,7 +32,7 @@ public class VideoCallUI implements ViewsMethods {
         selfView.setStyle("-fx-border-color: white; -fx-border-width: 2; -fx-background-color: #333;");
 
         // Bouton raccrocher
-        btnRaccrocher = new Button("Raccrocher");
+        btnRaccrocher = createIconButton("/icons/hangup.png", 24);
         btnRaccrocher.setStyle("-fx-background-color: red; -fx-text-fill: white;");
         btnRaccrocher.setOnAction(e -> System.out.println("Appel terminé"));
 
