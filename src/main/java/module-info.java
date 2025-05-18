@@ -2,7 +2,9 @@ module alanya {
     requires transitive javafx.controls;
     requires javafx.graphics;
     requires javafx.media;
+    requires javafx.swing;
     requires java.desktop;
+    requires java.prefs;
 
     requires java.sql;
     

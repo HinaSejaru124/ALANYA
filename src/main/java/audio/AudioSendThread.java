@@ -1,15 +1,18 @@
 package audio;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.Socket;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class AudioSendThread extends Thread {
 
-    private final Socket socket;
+    private final DatagramSocket socket;
     private final AudioSetup audioSetup;
 
-    public AudioSendThread(Socket socket, AudioSetup audioSetup) {
+    public AudioSendThread(DatagramSocket socket, AudioSetup audioSetup) {
         this.socket = socket;
         this.audioSetup = audioSetup;
     }
@@ -17,13 +20,27 @@ public class AudioSendThread extends Thread {
     @Override
     public void run() {
         try {
-            byte[] buffer = new byte[8192];
-            OutputStream out = socket.getOutputStream();
 
+            DatagramPacket pingPacket = new DatagramPacket(new byte[1], 1);
+            socket.receive(pingPacket);
+
+            InetAddress addr = pingPacket.getAddress();
+            int port = pingPacket.getPort();
+
+            byte[] audioBuf = new byte[4096];
             while (true) {
-                int count = audioSetup.getMicrophone().read(buffer, 0, buffer.length);
+                int count = audioSetup.getMicrophone().read(audioBuf, 0, audioBuf.length);
                 if (count > 0) {
-                    out.write(buffer, 0, count);
+                    ByteBuffer bb = ByteBuffer.allocate(Long.BYTES + Integer.BYTES + count)
+                            .order(ByteOrder.BIG_ENDIAN);
+                    bb.putLong(System.nanoTime());
+                    bb.putInt(count);
+                    bb.put(audioBuf, 0, count);
+                    byte[] packetData = bb.array();
+
+                    DatagramPacket packet = new DatagramPacket(
+                            packetData, packetData.length, addr, port);
+                    socket.send(packet);
                 }
             }
         } catch (IOException e) {

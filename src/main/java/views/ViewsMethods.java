@@ -8,12 +8,11 @@ import java.net.URISyntaxException;
 
 import javax.imageio.ImageIO;
 
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritableImage;
 import javafx.scene.text.Font;
 
 public interface ViewsMethods {
@@ -22,16 +21,8 @@ public interface ViewsMethods {
 	}
 
 	default Image convertToFxImage(BufferedImage bufferedImage) {
-		WritableImage writableImage = new WritableImage(bufferedImage.getWidth(), bufferedImage.getHeight());
-		PixelWriter pw = writableImage.getPixelWriter();
-
-		for (int y = 0; y < bufferedImage.getHeight(); y++) {
-			for (int x = 0; x < bufferedImage.getWidth(); x++) {
-				pw.setArgb(x, y, bufferedImage.getRGB(x, y));
-			}
-		}
-		return writableImage;
-	}
+        return SwingFXUtils.toFXImage(bufferedImage, null);
+    }
 
 	default public ImageView loadAnyImage(String url, double width, double height, Boolean preserveRatio, Boolean smooth) {
 		try {

@@ -4,8 +4,15 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioFormat;
@@ -16,21 +23,21 @@ import javax.sound.sampled.SourceDataLine;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class WebcamFXClient extends Application {
     private ImageView imageView;
+    private final String host = "192.168.1.117";
 
     @Override
     public void start(Stage stage) {
         new Thread(() -> {
-            try (Socket socket = new Socket("localhost", 2000)) {
+            try (Socket socket = new Socket(host, 2000)) {
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
                 while (true) {
                     int length = dis.readInt(); // lit la longueur
@@ -48,25 +55,47 @@ public class WebcamFXClient extends Application {
         }).start();
 
         new Thread(() -> {
-            try (Socket socket = new Socket("localhost", 2001)) {
-                AudioFormat format = new AudioFormat(44100, 16, 2, true, true);
-                DataLine.Info speakersInfo = new DataLine.Info(SourceDataLine.class, format);
+            try {// CLIENT – à mettre dans le même thread UDP, avant et pendant la receive-loop
+                DatagramSocket udp = new DatagramSocket();
+                InetAddress serverAddr = InetAddress.getByName(host);
+                byte[] ping = new byte[] { 0 };
 
-                SourceDataLine speakers = (SourceDataLine) AudioSystem.getLine(speakersInfo);
+                ScheduledExecutorService ka = Executors.newSingleThreadScheduledExecutor();
+                ka.scheduleAtFixedRate(() -> {
+                    try {
+                        udp.send(new DatagramPacket(ping, ping.length, serverAddr, 2001));
+                    } catch (IOException ignored) {
+                    }
+                }, 0, 5, TimeUnit.SECONDS);
+
+                // Puis votre boucle udp.receive(…)
+
+                // 3) on initialise la ligne audio
+                AudioFormat format = new AudioFormat(16000, 16, 1, true, false);
+                DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
+                SourceDataLine speakers = (SourceDataLine) AudioSystem.getLine(info);
                 speakers.open(format);
                 speakers.start();
 
-                byte[] buffer = new byte[8192];
-                InputStream in = socket.getInputStream();
+                // 4) boucle de réception/réception audio
+                byte[] buf = new byte[4096 + Long.BYTES + Integer.BYTES];
+                DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
                 while (true) {
-                    int count = in.read(buffer, 0, buffer.length);
-                    if (count > 0) {
-                        speakers.write(buffer, 0, count);
-                    }
+                    udp.receive(packet);
+                    ByteBuffer bb = ByteBuffer.wrap(packet.getData(), 0, packet.getLength())
+                            .order(ByteOrder.BIG_ENDIAN);
+
+                    long ts = bb.getLong();
+                    int len = bb.getInt();
+                    byte[] pcm = new byte[len];
+                    bb.get(pcm);
+
+                    speakers.write(pcm, 0, len);
                 }
-            } catch (LineUnavailableException ex) {
-            } catch (IOException ex) {
+
+            } catch (LineUnavailableException | IOException ex) {
+                ex.printStackTrace();
             }
         }).start();
 
@@ -80,15 +109,7 @@ public class WebcamFXClient extends Application {
     }
 
     private Image convertToFxImage(BufferedImage bufferedImage) {
-        WritableImage writableImage = new WritableImage(bufferedImage.getWidth(), bufferedImage.getHeight());
-        PixelWriter pw = writableImage.getPixelWriter();
-
-        for (int y = 0; y < bufferedImage.getHeight(); y++) {
-            for (int x = 0; x < bufferedImage.getWidth(); x++) {
-                pw.setArgb(x, y, bufferedImage.getRGB(x, y));
-            }
-        }
-        return writableImage;
+        return SwingFXUtils.toFXImage(bufferedImage, null);
     }
 
     public static void main(String[] args) {

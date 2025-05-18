@@ -36,9 +36,9 @@
             <version>8.0.33</version>
         </dependency>
         <dependency>
-            <groupId>javazoom</groupId>
-            <artifactId>jlayer</artifactId>
-            <version>1.0.1</version>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>13</version>
         </dependency>
     </dependencies>
     <build>

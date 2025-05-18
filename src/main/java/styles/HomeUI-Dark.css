@@ -1,0 +1,237 @@
+/* =========================================================== */
+/*  Dark Theme - src/main/resources/styles/dark.css           */
+/* =========================================================== */
+
+/* Base colors */
+.root {
+    -fx-base: #121212;
+    -fx-background: #121212;
+    -fx-control-inner-background: #1E1E1E;
+    -fx-text-fill: #E0E0E0;
+}
+
+/* Header */
+.header {
+    -fx-background-color: #B36B00;
+    -fx-padding: 10px;
+}
+
+.header-button {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+}
+
+.header-button:hover {
+    -fx-background-color: rgba(255,255,255,0.15);
+    -fx-background-radius: 50%;
+}
+
+/* Contacts pane */
+.contacts-zone {
+    -fx-background-color: #1E1E1E;
+    -fx-padding: 15px;
+}
+
+.app-name {
+    -fx-text-fill: linear-gradient(to top, #F7AF33 0%, #FFCC80 100%);
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.search-field {
+    -fx-background-color: #333333;
+    -fx-text-fill: #E0E0E0;
+    -fx-border-color: #B36B00;
+    -fx-background-radius: 20px;
+    -fx-border-radius: 20px;
+    -fx-padding: 10px;
+    -fx-prompt-text-fill: #9E9E9E;
+}
+
+.contacts-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.contact-item {
+    -fx-background-color: #252525;
+    -fx-background-radius: 6px;
+}
+
+.contact-item:hover {
+    -fx-background-color: #303030;
+}
+
+.contact-item.selected {
+    -fx-background-color: #404040;
+    -fx-border-color: #F7AF33;
+    -fx-border-width: 0 0 0 3px;
+}
+
+.add-contact-box {
+    -fx-alignment: bottom-right;
+    -fx-padding: 20px;
+}
+
+.btn-add-contact {
+    -fx-background-color: linear-gradient(to top, #C47C00 0%, #F7AF33 100%);
+}
+
+/* Messages pane */
+.messages-container, .messages-scroll {
+    -fx-background-color: #252525;
+}
+
+.messages-scroll {
+    -fx-hbar-policy: never;
+    -fx-vbar-policy: never;
+}
+
+/* Scrollbar styling */
+.scroll-bar:vertical, .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .thumb, .scroll-bar:horizontal .thumb {
+    -fx-background-color: #555555;
+    -fx-background-radius: 5em;
+}
+
+/* Conversation background */
+.conversation-bg {
+    -fx-background-color: #252525;
+}
+
+/* Message bubbles */
+.message.received {
+    -fx-background-color: #333333;
+    -fx-text-fill: #E0E0E0;
+    -fx-background-radius: 16px;
+    -fx-padding: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 4, 0.05, 0, 2);
+}
+
+.message.sent {
+    -fx-background-color: #B36B00;
+    -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 16px;
+    -fx-padding: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 4, 0.05, 0, 2);
+}
+
+.message-time {
+    -fx-text-fill: #9E9E9E;
+    -fx-font-size: 10px;
+}
+
+.date-separator {
+    -fx-text-fill: #9E9E9E;
+    -fx-background-color: rgba(158,158,158,0.1);
+    -fx-background-radius: 10px;
+    -fx-padding: 5px 10px;
+}
+
+/* Input zone */
+.input-zone {
+    -fx-background-color: #1E1E1E;
+    -fx-padding: 14px;
+    -fx-spacing: 8px;
+}
+
+.chat-input {
+    -fx-background-color: #333333;
+    -fx-text-fill: #E0E0E0;
+    -fx-border-color: #B36B00;
+    -fx-background-radius: 25px;
+    -fx-border-radius: 25px;
+    -fx-padding: 12px 20px;
+    -fx-prompt-text-fill: #9E9E9E;
+}
+
+.chat-input:focused {
+    -fx-border-color: #F7AF33;
+}
+
+/* Circular buttons */
+.btn-circle {
+    -fx-background-radius: 50%;
+    -fx-min-width: 48px;
+    -fx-min-height: 48px;
+    -fx-max-width: 48px;
+    -fx-max-height: 48px;
+    -fx-cursor: hand;
+}
+
+.btn-circle:hover {
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.btn-send { 
+    -fx-background-color: #F7AF33;
+}
+
+.btn-audio { 
+    -fx-background-color: #F7AF33;
+}
+
+.btn-clip { 
+    -fx-background-color: #333333;
+}
+
+/* Dialog (Add Contact) */
+.dialog-box {
+    -fx-background-color: #1E1E1E;
+    -fx-background-radius: 15px;
+    -fx-padding: 30px;
+    -fx-spacing: 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 50, 0.3, 0, 5);
+}
+
+.dialog-close {
+    -fx-background-color: #333333;
+    -fx-background-radius: 50%;
+    -fx-min-width: 30px;
+    -fx-min-height: 30px;
+    -fx-cursor: hand;
+}
+
+.dialog-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #E0E0E0;
+}
+
+.dialog-input {
+    -fx-background-color: #333333;
+    -fx-text-fill: #E0E0E0;
+    -fx-border-color: #555555;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 10px;
+    -fx-prompt-text-fill: #9E9E9E;
+}
+
+.btn-primary {
+    -fx-background-color: #F7AF33;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+}
+
+/* Context menu */
+.context-menu {
+    -fx-background-color: #333333;
+    -fx-background-radius: 5px;
+    -fx-border-color: #555555;
+    -fx-border-radius: 5px;
+}
+
+.menu-item {
+    -fx-text-fill: #E0E0E0;
+}
+
+.menu-item:focused {
+    -fx-background-color: #F7AF33;
+}

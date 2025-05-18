@@ -4,9 +4,16 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioFormat;
@@ -26,51 +33,62 @@ public class WebcamFXServer {
         webcam.setViewSize(WebcamResolution.VGA.getSize());
         webcam.open();
 
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(this::sendVideo, 30, 30, TimeUnit.MILLISECONDS);
+        
         new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket(2000)) {
-                Socket socket = serverSocket.accept();
-                DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+            final int AUDIO_PORT = 2001;
+            try (DatagramSocket udpSocket = new DatagramSocket(AUDIO_PORT)) {
+                byte[] pingBuf = new byte[1];
+                DatagramPacket pingPacket = new DatagramPacket(pingBuf, pingBuf.length);
+                udpSocket.receive(pingPacket);
+                InetAddress clientAddr = pingPacket.getAddress();
+                int clientPort = pingPacket.getPort();
+
+                AudioFormat format = new AudioFormat(16000, 16, 1, true, false);
+                DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+                TargetDataLine mic = (TargetDataLine) AudioSystem.getLine(info);
+                mic.open(format);
+                mic.start();
+
+                byte[] audioBuf = new byte[4096];
                 while (true) {
-                    BufferedImage bufferedImage = webcam.getImage();
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    if (bufferedImage != null) {
-                        ImageIO.write(bufferedImage, "JPG", baos);
-
-                        byte[] jpegData = baos.toByteArray();
-                        dos.writeInt(jpegData.length); // 4 octets de longueur
-                        dos.write(jpegData); // les octets de l’image
-                        dos.flush();
-                    }
-                }
-            } catch (IOException ex) {
-            }
-
-        }).start();
-
-        new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket(2001)) {
-                AudioFormat format = new AudioFormat(44100, 16, 2, true, true);
-                DataLine.Info microphoneInfo = new DataLine.Info(TargetDataLine.class, format);
-
-                TargetDataLine microphone = (TargetDataLine) AudioSystem.getLine(microphoneInfo);
-                microphone.open(format);
-                microphone.start();
-
-                Socket socket = serverSocket.accept();
-
-                byte[] buffer = new byte[8192];
-                OutputStream out = socket.getOutputStream();
-
-                while (true) {
-                    int count = microphone.read(buffer, 0, buffer.length);
+                    int count = mic.read(audioBuf, 0, audioBuf.length);
                     if (count > 0) {
-                        out.write(buffer, 0, count);
+                        ByteBuffer bb = ByteBuffer.allocate(Long.BYTES + Integer.BYTES + count)
+                                .order(ByteOrder.BIG_ENDIAN);
+                        bb.putLong(System.nanoTime());
+                        bb.putInt(count);
+                        bb.put(audioBuf, 0, count);
+                        byte[] packetData = bb.array();
+
+                        DatagramPacket packet = new DatagramPacket(
+                                packetData, packetData.length, clientAddr, clientPort);
+                        udpSocket.send(packet);
                     }
                 }
-            } catch (LineUnavailableException ex) {
-            } catch (IOException ex) {
-            }
+            } catch (IOException | LineUnavailableException e) {}
         }).start();
+    }
+
+    public void sendVideo() {
+        try (ServerSocket serverSocket = new ServerSocket(2000)) {
+            Socket socket = serverSocket.accept();
+            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+            while (true) {
+                BufferedImage bufferedImage = webcam.getImage();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                if (bufferedImage != null) {
+                    ImageIO.write(bufferedImage, "png", baos);
+
+                    byte[] jpegData = baos.toByteArray();
+                    dos.writeInt(jpegData.length);
+                    dos.write(jpegData);
+                    dos.flush();
+                }
+            }
+        } catch (IOException ex) {
+        }
     }
 
     public static void main(String[] args) {

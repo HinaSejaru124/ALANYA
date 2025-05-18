@@ -17,7 +17,7 @@ public class AudioSetup extends Thread {
 
     public AudioSetup() {
         try {
-            format = new AudioFormat(16000, 16, 2, true, true);
+            format = new AudioFormat(16000, 16, 1, true, false);
             DataLine.Info microphoneInfo = new DataLine.Info(TargetDataLine.class, format);
             DataLine.Info speakersInfo = new DataLine.Info(SourceDataLine.class, format);
 

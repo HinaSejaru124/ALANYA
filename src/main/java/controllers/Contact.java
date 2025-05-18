@@ -8,6 +8,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 
 public class Contact extends HBox {
     private final int id;
@@ -43,9 +44,13 @@ public class Contact extends HBox {
         // Informations du contact
         VBox contactInfo = new VBox(2);
         Label nameLabel = new Label(name);
-        nameLabel.setStyle("-fx-font-weight: bold;-fx-text-fill: #666666; ");
+        nameLabel.setStyle("-fx-text-fill: #666666; ");
+        nameLabel.setFont(Font.loadFont(getClass().getResourceAsStream("/fonts/Montserrat-Bold.ttf"), 16));
+
         statusLabel = new Label(status ? "En ligne" : "Hors ligne");
-        statusLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12px;");
+        statusLabel.setStyle("-fx-text-fill: #666666;");
+        statusLabel.setFont(Font.loadFont(getClass().getResourceAsStream("/fonts/Montserrat-Regular.ttf"), 12));
+
         contactInfo.getChildren().addAll(nameLabel, statusLabel);
 
         getChildren().addAll(profilePic, contactInfo);

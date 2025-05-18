@@ -48,7 +48,7 @@
     -fx-background-color: linear-gradient(from 0% 50% to 0% 0%,#c45800,#F7AF33);
 }
 
-.back-button {
+/*.back-button {
     -fx-background-color: #FFFFFF;
     -fx-text-fill: linear-gradient(from 0% 50% to 0% 0%,#c45800,#F7AF33);
     -fx-font-size: 30px;
@@ -60,7 +60,7 @@
     -fx-padding: 5px;
     -fx-cursor: hand;
 
-}
+}*/
 
 .lien {
     -fx-underline: true; 
@@ -98,19 +98,30 @@
 }
 
 .root-infos-user {
-    -fx-background-color: linear-gradient(from 0% 100% to 0% 0%,#FDBF89,#F7AF33);
-}
-
-.back-button {
-    -fx-background-color: transparent;
-    -fx-cursor: hand;
+    -fx-background-color: #FFFFFF;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 15px;
+    -fx-text-fill: #2A2A2A;
 }
 
 .user-info-label {
     -fx-font-size: 16px;
-    -fx-text-fill: #333333;
-    -fx-font-weight: bold;
+    -fx-text-fill: #2A2A2A;
+    -fx-font-weight: 500;
 }
+
+.back-button {
+    -fx-background-color: #E1ECF4;
+    -fx-background-radius: 50;
+    -fx-padding: 8;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(one-pass-box, rgba(0,0,0,0.1), 3, 0, 0, 1);
+}
+
+.back-button:hover {
+    -fx-background-color: #D3E6F2;
+}
+
 
 /* Effet vitre sur la box principale */
 .call-glass {
@@ -147,6 +158,22 @@
 }
 
 
+
+ .modern-progress-bar {
+                -fx-background-color: rgba(255, 255, 255, 0.3);
+                -fx-background-radius: 3px;
+                -fx-background-insets: 0;
+                -fx-padding: 0;
+            }
+.modern-progress-bar .bar {
+                -fx-background-color: white;
+                -fx-background-radius: 3px;
+                -fx-background-insets: 0;
+                -fx-padding: 0;
+                -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.7), 10, 0, 0, 0);
+            }
+
+
 /* Hover effects */
 .call-button:hover {
     -fx-background-color: linear-gradient(to bottom, #66BB6A, #43A047);
@@ -157,10 +184,6 @@
 }
 
 
-.back-button:hover {
-    -fx-background-color: #f5f5f5;
-    -fx-text-fill: #C47C00;
-}
 .border-pane {
     -fx-background-color: linear-gradient(from 0% 0% to 0% 100%,#c45800, #ffa406);
     -fx-padding: 70px 200px;

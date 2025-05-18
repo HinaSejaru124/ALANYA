@@ -7,8 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Connection;
@@ -36,19 +36,23 @@ import controllers.Message;
 import file.FileReceiveThread;
 import file.FileSendThread;
 import javafx.application.Platform;
+import javafx.scene.control.Button;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
 import message.MessageReadThread;
 import message.MessageWriteThread;
+import views.CallInitiationUI;
+import views.CallReceptionUI;
 import views.MainApp;
+import views.OngoingCallUI;
 import views.Util;
 
 public final class Client extends MainApp implements Terminal {
-    private static final String SERVER = "192.168.1.117";
+    private static final String SERVER = "localhost";
 
     private final String dbUrl = String.format("jdbc:mysql://%s:3306/ALANYA", SERVER);
-    private final String dbUser = "n";
-    private final String dbPassword = "Oben1650!";
+    private final String dbUser = "root";
+    private final String dbPassword = "jeff@14022003";
 
     private int user_id;
     private String nom;
@@ -63,12 +67,24 @@ public final class Client extends MainApp implements Terminal {
     private final ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
     private final AudioSetup audioSetup = new AudioSetup();
+    private volatile boolean inCall = false;
+    private DatagramSocket audioSocket;
     private AudioSendThread audioSendThread;
     private AudioReceiveThread audioReceiveThread;
+
+    // Références aux nouvelles interfaces d'appel
+    private OngoingCallUI ongoingCallUI;
+    private CallInitiationUI callInitiationUI;
+    private CallReceptionUI callReceptionUI;
 
     @Override
     public void start(Stage primaryStage) {
         super.start(primaryStage);
+
+        // Initialiser les références aux interfaces d'appel depuis callManager
+        ongoingCallUI = callManager.getOngoingCallUI();
+        callInitiationUI = callManager.getInitiationUI();
+        callReceptionUI = callManager.getReceptionUI();
 
         createAppDirectories();
         setupUIHandlers(primaryStage);
@@ -81,7 +97,7 @@ public final class Client extends MainApp implements Terminal {
     private void createAppDirectories() {
         String home = System.getProperty("user.home");
         String[] dirs = { "Alanya", "Alanya/Alanya Images", "Alanya/Alanya Videos",
-                "Alanya/Alanya Audios", "Alanya/Alanya Documents", "Alanya/Profile_pictures" };
+                "Alanya/Alanya Audios", "Alanya/Alanya Documents", "Alanya/Alanya Profile_pictures" };
         Arrays.stream(dirs).forEach(path -> new File(home, path).mkdirs());
     }
 
@@ -97,13 +113,14 @@ public final class Client extends MainApp implements Terminal {
                 sendMessage();
         });
         homeUI.chooseFileButton.setOnAction(e -> handleFileSend());
-        homeUI.item2.setOnAction(e -> {
+        homeUI.profileButton.setOnAction(e -> {
             showLogin();
             try {
                 updateUserStatus(false);
             } catch (SQLException ex) {
             }
         });
+        homeUI.audioCallButton.setOnAction(e -> handleAudioCall());
         primaryStage.setOnCloseRequest(event -> handleAppClose());
     }
 
@@ -141,7 +158,7 @@ public final class Client extends MainApp implements Terminal {
     private void handleAddContact() {
         String saisie = homeUI.idField.getText();
         if (saisie == null || saisie.trim().isEmpty()) {
-            Util.showError("Veuillez saisir l’identifiant du contact.");
+            Util.showError("Veuillez saisir l'identifiant du contact.");
             return;
         }
         int contactId;
@@ -252,6 +269,59 @@ public final class Client extends MainApp implements Terminal {
         }
     }
 
+    private void handleAudioCall() {
+        // Mettre à jour le nom du contact dans callManager
+        String contactName = contacts.stream()
+                .filter(c -> c.getUserId() == interlocuteurId)
+                .map(Contact::getName)
+                .findFirst()
+                .orElse("Contact");
+        
+        callManager.setContactName(contactName);
+        
+        // Utiliser l'interface d'initiation d'appel
+        showCallInitiationUI();
+        
+        // Démarrer la progression simulée de l'appel
+        callInitiationUI.simulateCallProgress();
+
+        new Thread(() -> {
+            try {
+                String ip = findUserById(interlocuteurId);
+                try (Socket socket = new Socket(ip, AUDIO_INFO_PORT)) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    if (Boolean.parseBoolean(reader.readLine())) {
+                        // L'appel a été accepté, passer à l'interface d'appel en cours
+                        Platform.runLater(() -> {
+                            showOngoingCallUI();
+                            
+                            // Configurer l'interface d'appel en cours après connexion
+                            setupAudioCallInterface();
+                        });
+
+                        audioSetup.getMicrophone().start();
+                        audioSetup.getSpeakers().start();
+
+                        // DatagramSocket audioSocket = new DatagramSocket(AUDIO_PORT);
+
+                        // audioSendThread = new AudioSendThread(audioSocket, audioSetup);
+                        // audioSendThread.start();
+
+                        // audioReceiveThread = new AudioReceiveThread(audioSocket, audioSetup,
+                        // socket.getInetAddress().getHostAddress(), AUDIO_PORT);
+                        // audioReceiveThread.start();
+                    } else {
+                        // L'appel a été refusé, retourner à l'accueil
+                        Platform.runLater(this::showHome);
+                    }
+                }
+            } catch (IOException ex) {
+                Platform.runLater(() -> Util.showError("Erreur lors de l'appel: " + ex.getMessage()));
+                Platform.runLater(this::showHome);
+            }
+        }).start();
+    }
+
     private void loadContacts() {
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
                 PreparedStatement ps = conn.prepareStatement(
@@ -312,7 +382,6 @@ public final class Client extends MainApp implements Terminal {
                             if (contact.getStatus() != now) {
                                 Platform.runLater(() -> {
                                     contact.setStatus(now);
-                                    contact.setDisable(!now);
                                     contact.getStatusLabel().setText(now ? "En ligne" : "Hors ligne");
                                 });
                             }
@@ -351,7 +420,7 @@ public final class Client extends MainApp implements Terminal {
         try (ServerSocket audioCallServerSocket = new ServerSocket(AUDIO_INFO_PORT)) {
             while (true) {
                 Socket client = audioCallServerSocket.accept();
-                handleAudioConnection(client, audioSetup);
+                pool.submit(() -> handleAudioConnection(client));
             }
         } catch (IOException ex) {
             Platform.runLater(() -> Util.showError(ex.getLocalizedMessage()));
@@ -476,53 +545,169 @@ public final class Client extends MainApp implements Terminal {
         }
     }
 
-    /*
-     * P
-     * A
-     * S
-     * 
-     * A
-     * C
-     * H
-     * E
-     * V
-     * É
-     */
-
-    private void handleAudioConnection(Socket socket, AudioSetup audioSetup) {
-        showAudioCallUI();
-        audioCallUI.getHangupButton().setOnAction(e -> {
-            try {
-                PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+    private void handleAudioConnection(Socket signalSocket) {
+        if (inCall) {
+            try (PrintWriter writer = new PrintWriter(signalSocket.getOutputStream(), true)) {
                 writer.println(false);
-            } catch (IOException ex) {
-                Platform.runLater(() -> Util.showError("Impossible de rejeter l'appel entrant"));
-            } finally {
-                closeQuietly(socket);
+            } catch (IOException ignored) {
             }
-            showHome();
-        });
+            closeQuietly(signalSocket);
+            return;
+        }
 
-        audioCallUI.getCallButton().setOnAction(e -> {
+        inCall = true;
+        
+        // Trouver l'ID de l'appelant
+        int callerId = findUserByIp(signalSocket.getInetAddress().getHostAddress());
+        
+        // Trouver le nom de l'appelant
+        String callerName = contacts.stream()
+                .filter(c -> c.getUserId() == callerId)
+                .map(Contact::getName)
+                .findFirst()
+                .orElse("Contact inconnu");
+        
+        // Mettre à jour le nom de l'appelant
+        callManager.setContactName(callerName);
+        
+        // Afficher l'interface de réception d'appel
+        Platform.runLater(() -> {
+            showCallReceptionUI();
+            
+            // Configurer les boutons pour la réception d'appel
+            setupIncomingCallInterface(signalSocket);
+        });
+    }
+    
+    /**
+     * Configure l'interface pour un appel entrant
+     */
+    private void setupIncomingCallInterface(Socket signalSocket) {
+        // Configurer le bouton pour accepter l'appel
+        Button acceptButton = callReceptionUI.getAcceptCallButton();
+        acceptButton.setOnAction(e -> {
             try {
-                PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+                // Confirmer l'acceptation de l'appel
+                PrintWriter writer = new PrintWriter(signalSocket.getOutputStream(), true);
                 writer.println(true);
-
-                Socket audioSocket = new ServerSocket(AUDIO_PORT).accept();
-
+                
+                // Animer l'acceptation de l'appel
+                callReceptionUI.acceptCall();
+                
+                // Passer à l'interface d'appel en cours après un délai
+                Platform.runLater(() -> {
+                    // Attendre que l'animation se termine
+                    try {
+                        Thread.sleep(1500);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                    
+                    // Passer à l'interface d'appel en cours
+                    showOngoingCallUI();
+                    
+                    // Configurer l'interface d'appel en cours
+                    setupAudioCallInterface();
+                });
+                
+                // Démarrer le pipeline audio
                 audioSetup.getMicrophone().start();
-                audioSendThread = new AudioSendThread(audioSocket, audioSetup);
-                audioSendThread.start();
-
-                audioReceiveThread = new AudioReceiveThread(audioSocket, audioSetup);
-                audioReceiveThread.start();
+                audioSetup.getSpeakers().start();
+                
+                // Ajouter ici le code pour démarrer les threads audio
+                // ...
+                
             } catch (IOException ex) {
-                Platform.runLater(() -> Util.showError("Impossible d'accepter l'appel entrant"));
-            } finally {
-                closeQuietly(socket);
+                Platform.runLater(() -> Util.showError("Impossible d'accepter l'appel"));
+                cleanupAfterCall();
             }
-            showHome();
         });
+        
+        // Configurer le bouton pour rejeter l'appel
+        Button rejectButton = callReceptionUI.getRejectCallButton();
+        rejectButton.setOnAction(e -> {
+            try {
+                // Rejeter l'appel
+                PrintWriter writer = new PrintWriter(signalSocket.getOutputStream(), true);
+                writer.println(false);
+                
+                // Animer le rejet de l'appel
+                callReceptionUI.rejectCall();
+                
+                // Nettoyer les ressources
+                cleanupAfterCall();
+                
+                // Retourner à l'écran d'accueil après un délai
+                Platform.runLater(() -> {
+                    // Attendre que l'animation se termine
+                    try {
+                        Thread.sleep(800);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                    
+                    // Retourner à l'écran d'accueil
+                    showHome();
+                });
+                
+            } catch (IOException ex) {
+                Platform.runLater(() -> Util.showError("Erreur lors du rejet de l'appel"));
+                cleanupAfterCall();
+                showHome();
+            }
+        });
+    }
+    
+    /**
+     * Configure l'interface pour un appel en cours
+     */
+    private void setupAudioCallInterface() {
+        // Configurer le bouton pour terminer l'appel
+        Button endCallButton = ongoingCallUI.getEndCallButton();
+        endCallButton.setOnAction(e -> {
+            // Animer la fin de l'appel
+            ongoingCallUI.endCall();
+            
+            // Nettoyer les ressources
+            cleanupAfterCall();
+            
+            // Retourner à l'écran d'accueil après un délai
+            Platform.runLater(() -> {
+                // Attendre que l'animation se termine
+                try {
+                    Thread.sleep(800);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+                
+                // Retourner à l'écran d'accueil
+                showHome();
+            });
+        });
+        
+        // Configurer le bouton pour couper le micro
+        Button muteButton = ongoingCallUI.getMuteButton();
+        muteButton.setOnAction(e -> {
+            // Logique pour couper/activer le micro
+            // ...
+        });
+        
+        // Configurer le bouton pour activer/désactiver le haut-parleur
+        Button speakerButton = ongoingCallUI.getSpeakerButton();
+        speakerButton.setOnAction(e -> {
+            // Logique pour activer/désactiver le haut-parleur
+            // ...
+        });
+    }
+
+    private void cleanupAfterCall() {
+        inCall = false;
+        if (audioSendThread != null)
+            audioSendThread.interrupt();
+        if (audioReceiveThread != null)
+            audioReceiveThread.interrupt();
+        if (audioSocket != null && !audioSocket.isClosed())
+            audioSocket.close();
     }
 
     private void closeQuietly(Socket s) {

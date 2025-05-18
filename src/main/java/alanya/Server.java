@@ -15,7 +15,7 @@ import java.sql.SQLException;
 
 public final class Server implements Terminal {
     private static final String DB_URL = "jdbc:mysql://localhost:3306/ALANYA";
-    private static final String DB_USER = "n";
+    private static final String DB_USER = "root";
     private static final String DB_PASSWORD = readDatabasePassword();
 
     public static void main(String[] args) {

@@ -21,32 +21,31 @@ public class InfosUserUI implements ViewsMethods {
     public Label idLabel;
 
     public InfosUserUI() {
-        // Bouton retour
-        backButton = createIconButton("/icons/go-back.png", 40);
+        // Bouton retour stylé Telegram
+        backButton = createIconButton("/icons/go-back.png", 30);
         backButton.getStyleClass().add("back-button");
 
-        // Zone du bouton retour alignée en haut à gauche
         HBox backBox = new HBox(backButton);
         backBox.setAlignment(Pos.TOP_LEFT);
-        backBox.setPadding(new Insets(10, 0, 0, 10));
+        backBox.setPadding(new Insets(20, 0, 0, 20));
 
-        // Photo de profil
-        profilePicButton = createIconButton("/icons/utilisateur.png", 120);
-        profilePicButton.setStyle("-fx-background-color: #F5F5F5;"//#FFE4CD;
-                + "-fx-min-width: 170px; "
-				+ "-fx-min-height: 170px; "
-				+ "-fx-max-width: 170px; "
-				+ "-fx-max-height: 170px;" 
-                + "-fx-background-radius: 120;");
+        // Photo de profil circulaire
+        profilePicButton = createIconButton("/icons/utilisateur.png", 100);
+        profilePicButton.setStyle(
+              "-fx-background-color: #E1ECF4;"
+            + "-fx-background-radius: 80;"
+            + "-fx-min-width: 140px; -fx-min-height: 140px;"
+            + "-fx-max-width: 140px; -fx-max-height: 140px;"
+        );
 
         VBox profilePicBox = new VBox(profilePicButton);
         profilePicBox.setAlignment(Pos.CENTER);
         profilePicBox.setPadding(new Insets(10, 0, 10, 0));
 
         // Labels avec icônes
-        nameLabel = new Label("Nom : ");
-        prenomLabel = new Label("Prénom : ");
-        idLabel = new Label("Identifiant : ");
+        nameLabel = new Label("Nom :");
+        prenomLabel = new Label("Prénom :");
+        idLabel = new Label("Identifiant :");
 
         nameLabel.getStyleClass().add("user-info-label");
         prenomLabel.getStyleClass().add("user-info-label");
@@ -56,9 +55,9 @@ public class InfosUserUI implements ViewsMethods {
         HBox prenomBox = createInfoLine("/icons/utilisateur.png", prenomLabel);
         HBox idBox = createInfoLine("/icons/info.png", idLabel);
 
-        VBox infosBox = new VBox(15, nameBox, prenomBox, idBox);
+        VBox infosBox = new VBox(18, nameBox, prenomBox, idBox);
         infosBox.setAlignment(Pos.CENTER_LEFT);
-        infosBox.setPadding(new Insets(0, 0, 0, 50)); // Indentation propre
+        infosBox.setPadding(new Insets(0, 0, 0, 50));
 
         VBox centerBox = new VBox(30, profilePicBox, infosBox);
         centerBox.setAlignment(Pos.CENTER);
@@ -74,10 +73,11 @@ public class InfosUserUI implements ViewsMethods {
         ImageView icon = new ImageView(getClass().getResource(iconPath).toExternalForm());
         icon.setFitHeight(24);
         icon.setFitWidth(24);
-        HBox line = new HBox(10, icon, label);
+        HBox line = new HBox(12, icon, label);
         line.setAlignment(Pos.CENTER_LEFT);
         return line;
     }
+
 
     public Parent getRoot() {
         return root;
